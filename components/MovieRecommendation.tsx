@@ -32,6 +32,9 @@ function getRandomMovies(movies: any[], count: number) {
   return shuffled.slice(0, count)
 }
 
+// 缓存所有已获取的电影
+let cachedMovies: Movie[] = [];
+
 export default function MovieRecommendation() {
   const [movies, setMovies] = useState<Movie[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -59,21 +62,44 @@ export default function MovieRecommendation() {
   const getRecommendations = async () => {
     setIsLoading(true)
     try {
-      // 直接调用TMDB API
-      const url = `${env.TMDB_API_URL}/movie/top_rated?api_key=${env.TMDB_API_KEY}&language=en-US&page=1`;
-      const response = await fetch(url)
-      const data = await response.json()
+      // 只有当缓存为空时才从API获取电影
+      if (cachedMovies.length === 0) {
+        // 直接调用TMDB API - 获取更多电影（2页数据）以增加随机性
+        const url1 = `${env.TMDB_API_URL}/movie/top_rated?api_key=${env.TMDB_API_KEY}&language=en-US&page=1`;
+        const url2 = `${env.TMDB_API_URL}/movie/top_rated?api_key=${env.TMDB_API_KEY}&language=en-US&page=2`;
+        
+        const [response1, response2] = await Promise.all([
+          fetch(url1),
+          fetch(url2)
+        ]);
+        
+        const data1 = await response1.json();
+        const data2 = await response2.json();
+        
+        // 合并两页数据
+        cachedMovies = [...data1.results, ...data2.results];
+      }
       
       // 过滤已推荐的电影
-      const filteredMovies = data.results.filter((movie: Movie) => !recommendedMovieIds.includes(movie.id))
+      const filteredMovies = cachedMovies.filter((movie: Movie) => !recommendedMovieIds.includes(movie.id));
       
-      // 随机选择3部电影
-      const randomMovies = getRandomMovies(filteredMovies, 3)
-      setMovies(randomMovies)
-
-      // 更新已推荐的电影ID列表
-      const newIds = randomMovies.map((movie: Movie) => movie.id)
-      setRecommendedMovieIds((prev) => [...prev, ...newIds])
+      // 如果过滤后电影数量不足，则重置已推荐列表
+      if (filteredMovies.length < 3) {
+        setRecommendedMovieIds([]);
+        // 随机选择3部电影
+        const randomMovies = getRandomMovies(cachedMovies, 3);
+        setMovies(randomMovies);
+        // 更新已推荐的电影ID列表
+        const newIds = randomMovies.map((movie: Movie) => movie.id);
+        setRecommendedMovieIds(newIds);
+      } else {
+        // 随机选择3部电影
+        const randomMovies = getRandomMovies(filteredMovies, 3);
+        setMovies(randomMovies);
+        // 更新已推荐的电影ID列表
+        const newIds = randomMovies.map((movie: Movie) => movie.id);
+        setRecommendedMovieIds((prev) => [...prev, ...newIds]);
+      }
     } catch (error) {
       console.error("Error fetching recommendations:", error)
     }

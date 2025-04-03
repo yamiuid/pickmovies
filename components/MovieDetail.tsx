@@ -161,10 +161,14 @@ const streamingPlatforms = [
   },
 ]
 
+// 电影详情缓存
+const movieDetailsCache: Record<number, MovieDetails> = {};
+
 export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
   const [movie, setMovie] = useState<MovieDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
@@ -173,7 +177,32 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
+      setLoading(true)
+      setError(false)
+      
       try {
+        // 首先检查缓存中是否有此电影的详情
+        if (movieDetailsCache[movieId]) {
+          setMovie(movieDetailsCache[movieId])
+          setLoading(false)
+          return
+        }
+        
+        // 尝试从预生成的API获取电影详情（在静态导出中，这可能不起作用）
+        try {
+          const response = await fetch(`/api/movie/${movieId}`)
+          if (response.ok) {
+            const data = await response.json()
+            movieDetailsCache[movieId] = data
+            setMovie(data)
+            setLoading(false)
+            return
+          }
+        } catch (err) {
+          console.log("Static API route not accessible, falling back to direct API calls")
+        }
+        
+        // 如果预生成的API不可访问，直接从TMDB API获取数据
         // 获取电影详情
         const movieResponse = await fetch(
           `${env.TMDB_API_URL}/movie/${movieId}?api_key=${env.TMDB_API_KEY}&language=en-US`
@@ -198,10 +227,13 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
           credits: creditsData,
           images: imagesData,
         }
-
+        
+        // 保存到缓存
+        movieDetailsCache[movieId] = movieDetails
         setMovie(movieDetails)
       } catch (error) {
         console.error("Error fetching movie details:", error)
+        setError(true)
       } finally {
         setLoading(false)
       }
@@ -256,6 +288,16 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
         >
           {loading ? (
             <MovieDetailSkeleton />
+          ) : error ? (
+            <div className="p-8 text-center">
+              <p className="text-red-400 mb-4">Failed to load movie details.</p>
+              <button 
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           ) : movie ? (
             <div className="relative">
               {/* 关闭按钮 */}
