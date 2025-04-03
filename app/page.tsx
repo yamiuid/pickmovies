@@ -1,6 +1,11 @@
 import MovieRecommendation from "@/components/MovieRecommendation"
 import SimpleScrollingBackground from "@/components/SimpleScrollingBackground"
 
+// 为静态导出指定生成的路径
+export function generateStaticParams() {
+  return [{ }]  // 只生成主页
+}
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 relative">

@@ -3,6 +3,11 @@ import { type NextRequest, NextResponse } from "next/server"
 // 添加此行以支持静态导出
 export const dynamic = "force-static";
 
+// 添加这个函数以指定静态生成的API路由路径
+export function generateStaticParams() {
+  return [];  // 这个API路由在静态导出时不会被包含
+}
+
 export async function POST(request: NextRequest) {
   const { excludeIds = [] } = await request.json()
   const apiKey = process.env.TMDB_API_KEY
