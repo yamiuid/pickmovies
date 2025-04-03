@@ -1,16 +1,30 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { env } from "@/lib/env"
 
 // 添加此行以支持静态导出
 export const dynamic = "force-static";
+export const dynamicParams = false; // 不允许运行时为未在generateStaticParams中定义的参数生成页面
 
 // 添加这个函数以指定静态生成的API路由路径
 export function generateStaticParams() {
-  return [];  // 这个API路由在静态导出时不会被包含
+  // 为一些热门电影ID预生成路径
+  return [
+    { id: "299534" },  // 复仇者联盟4：终局之战
+    { id: "299536" },  // 复仇者联盟3：无限战争
+    { id: "1726" },    // 钢铁侠
+    { id: "157336" },  // 星际穿越
+    { id: "550" },     // 搏击俱乐部
+    { id: "155" },     // 黑暗骑士
+    { id: "13" },      // 阿甘正传
+    { id: "238" },     // 教父
+    { id: "680" },     // 低俗小说
+    { id: "429" },     // 肖申克的救赎
+  ];
 }
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const movieId = params.id
-  const apiKey = process.env.TMDB_API_KEY
+  const apiKey = env.TMDB_API_KEY
 
   try {
     // 获取电影详情

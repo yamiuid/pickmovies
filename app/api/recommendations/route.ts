@@ -1,16 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { env } from "@/lib/env"
 
 // 添加此行以支持静态导出
 export const dynamic = "force-static";
+export const dynamicParams = false; // 对于静态路由，这个设置不是必需的，但为了一致性添加它
 
 // 添加这个函数以指定静态生成的API路由路径
 export function generateStaticParams() {
-  return [];  // 这个API路由在静态导出时不会被包含
+  // 由于这不是动态路由，我们只需要返回一个空对象即可
+  return [{}];
 }
 
 export async function POST(request: NextRequest) {
   const { excludeIds = [] } = await request.json()
-  const apiKey = process.env.TMDB_API_KEY
+  const apiKey = env.TMDB_API_KEY
 
   // 获取多页数据以确保有足够的电影可供选择
   try {
@@ -47,7 +50,7 @@ function getRandomMovies(movies: any[], count: number) {
 
 // 保留GET方法以向后兼容
 export async function GET() {
-  const apiKey = process.env.TMDB_API_KEY
+  const apiKey = env.TMDB_API_KEY
   const url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${apiKey}&language=en-US&page=1`
 
   try {

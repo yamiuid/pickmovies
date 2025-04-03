@@ -6,6 +6,10 @@ export function generateStaticParams() {
   return [{ }]  // 只生成主页
 }
 
+// 声明这是一个静态页面
+export const dynamic = "force-static";
+export const dynamicParams = false;
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 relative">
