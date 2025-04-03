@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { X, Play, ExternalLink } from "lucide-react"
+import { env } from "@/lib/env"
 
 interface MovieDetailProps {
   movieId: number
@@ -173,9 +174,32 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
   useEffect(() => {
     const fetchMovieDetails = async () => {
       try {
-        const response = await fetch(`/api/movie/${movieId}`)
-        const data = await response.json()
-        setMovie(data)
+        // 获取电影详情
+        const movieResponse = await fetch(
+          `${env.TMDB_API_URL}/movie/${movieId}?api_key=${env.TMDB_API_KEY}&language=en-US`
+        )
+        const movieData = await movieResponse.json()
+
+        // 获取演职员信息
+        const creditsResponse = await fetch(
+          `${env.TMDB_API_URL}/movie/${movieId}/credits?api_key=${env.TMDB_API_KEY}&language=en-US`
+        )
+        const creditsData = await creditsResponse.json()
+
+        // 获取电影图片
+        const imagesResponse = await fetch(
+          `${env.TMDB_API_URL}/movie/${movieId}/images?api_key=${env.TMDB_API_KEY}`
+        )
+        const imagesData = await imagesResponse.json()
+
+        // 组合数据
+        const movieDetails = {
+          ...movieData,
+          credits: creditsData,
+          images: imagesData,
+        }
+
+        setMovie(movieDetails)
       } catch (error) {
         console.error("Error fetching movie details:", error)
       } finally {

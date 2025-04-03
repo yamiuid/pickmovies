@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import MovieCard from "./MovieCard"
 import MovieDetail from "./MovieDetail"
+import { env } from "@/lib/env"
 
 interface Movie {
   id: number
@@ -24,6 +25,12 @@ const MovieCardSkeleton = () => (
     </div>
   </div>
 )
+
+// 从返回的电影列表中随机选择几个
+function getRandomMovies(movies: any[], count: number) {
+  const shuffled = [...movies].sort(() => 0.5 - Math.random())
+  return shuffled.slice(0, count)
+}
 
 export default function MovieRecommendation() {
   const [movies, setMovies] = useState<Movie[]>([])
@@ -52,18 +59,20 @@ export default function MovieRecommendation() {
   const getRecommendations = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("/api/recommendations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ excludeIds: recommendedMovieIds }),
-      })
+      // 直接调用TMDB API
+      const url = `${env.TMDB_API_URL}/movie/top_rated?api_key=${env.TMDB_API_KEY}&language=en-US&page=1`;
+      const response = await fetch(url)
       const data = await response.json()
-      setMovies(data)
+      
+      // 过滤已推荐的电影
+      const filteredMovies = data.results.filter((movie: Movie) => !recommendedMovieIds.includes(movie.id))
+      
+      // 随机选择3部电影
+      const randomMovies = getRandomMovies(filteredMovies, 3)
+      setMovies(randomMovies)
 
       // 更新已推荐的电影ID列表
-      const newIds = data.map((movie: Movie) => movie.id)
+      const newIds = randomMovies.map((movie: Movie) => movie.id)
       setRecommendedMovieIds((prev) => [...prev, ...newIds])
     } catch (error) {
       console.error("Error fetching recommendations:", error)
