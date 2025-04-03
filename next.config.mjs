@@ -25,6 +25,11 @@ const nextConfig = {
       },
     ],
   },
+  exportPathMap: async function() {
+    return {
+      '/': { page: '/' },
+    };
+  },
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,

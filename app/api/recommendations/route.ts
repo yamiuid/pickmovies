@@ -1,5 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+// 添加此行以支持静态导出
+export const dynamic = "force-static";
+
 export async function POST(request: NextRequest) {
   const { excludeIds = [] } = await request.json()
   const apiKey = process.env.TMDB_API_KEY
