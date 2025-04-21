@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { X, Play, ExternalLink } from "lucide-react"
 import { env } from "@/lib/env"
+import { useAnalytics } from "@/lib/useAnalytics"
 
 interface MovieDetailProps {
   movieId: number
@@ -169,6 +170,7 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
   const [loading, setLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
   const [error, setError] = useState(false)
+  const { trackEvent } = useAnalytics()
 
   useEffect(() => {
     setIsMounted(true)
@@ -185,6 +187,11 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
         if (movieDetailsCache[movieId]) {
           setMovie(movieDetailsCache[movieId])
           setLoading(false)
+          
+          // 跟踪从缓存加载电影详情
+          trackEvent('movie_details_loaded_from_cache', {
+            movie_id: movieId
+          })
           return
         }
         
@@ -196,6 +203,12 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
             movieDetailsCache[movieId] = data
             setMovie(data)
             setLoading(false)
+            
+            // 跟踪从API加载电影详情
+            trackEvent('movie_details_loaded_from_api', {
+              movie_id: movieId,
+              movie_title: data.title
+            })
             return
           }
         } catch (err) {
@@ -231,9 +244,21 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
         // 保存到缓存
         movieDetailsCache[movieId] = movieDetails
         setMovie(movieDetails)
+        
+        // 跟踪从TMDB API直接加载电影详情
+        trackEvent('movie_details_loaded_from_tmdb', {
+          movie_id: movieId,
+          movie_title: movieData.title
+        })
       } catch (error) {
         console.error("Error fetching movie details:", error)
         setError(true)
+        
+        // 跟踪加载错误
+        trackEvent('movie_details_error', {
+          movie_id: movieId,
+          error_message: error instanceof Error ? error.message : 'Unknown error'
+        })
       } finally {
         setLoading(false)
       }
@@ -242,7 +267,7 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
     if (isMounted) {
       fetchMovieDetails()
     }
-  }, [movieId, isMounted])
+  }, [movieId, isMounted, trackEvent])
 
   // 获取导演信息
   const director = movie?.credits?.crew.find((person) => person.job === "Director")
@@ -267,6 +292,15 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
   const googleSearchUrl = movie?.title
     ? `https://www.google.com/search?q=watch+${encodeURIComponent(movie.title)}+movie+online`
     : "#"
+    
+  // 外部链接点击跟踪
+  const handleExternalLinkClick = (platform: string, url: string) => {
+    trackEvent('external_link_click', {
+      platform,
+      movie_id: movie?.id,
+      movie_title: movie?.title
+    })
+  }
 
   if (!isMounted) return null;
 
@@ -361,6 +395,7 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 px-4 py-2 bg-yellow-500 text-black font-bold rounded-md hover:bg-yellow-400 transition-colors"
+                    onClick={() => handleExternalLinkClick('IMDb', imdbUrl)}
                   >
                     <span>IMDb</span>
                     <ExternalLink className="w-4 h-4" />
@@ -370,6 +405,7 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-500 transition-colors"
+                    onClick={() => handleExternalLinkClick('Google', googleSearchUrl)}
                   >
                     <Play className="w-4 h-4" />
                     <span>Find where to watch</span>
@@ -441,7 +477,7 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
                 )}
 
                 {/* 流媒体平台 */}
-                <div className="mt-8">
+                <div className="mt-8 p-6">
                   <h3 className="text-xl font-semibold mb-3">Watch on Streaming Platforms</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {streamingPlatforms.map((platform) => (
@@ -451,6 +487,7 @@ export default function MovieDetail({ movieId, onClose }: MovieDetailProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`${platform.color} ${platform.textColor} py-2 px-4 rounded-md text-center font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2`}
+                        onClick={() => handleExternalLinkClick(platform.name, platform.searchUrl(movie.title))}
                       >
                         <span>{platform.name}</span>
                         <ExternalLink className="w-4 h-4" />

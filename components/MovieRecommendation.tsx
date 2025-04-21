@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import MovieCard from "./MovieCard"
 import MovieDetail from "./MovieDetail"
 import { env } from "@/lib/env"
+import { useAnalytics } from "@/lib/useAnalytics"
 
 interface Movie {
   id: number
@@ -41,6 +42,7 @@ export default function MovieRecommendation() {
   const [recommendedMovieIds, setRecommendedMovieIds] = useState<number[]>([])
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null)
   const [isMounted, setIsMounted] = useState(false)
+  const { trackEvent } = useAnalytics()
 
   // 组件挂载检查
   useEffect(() => {
@@ -60,6 +62,9 @@ export default function MovieRecommendation() {
   }, [movies, isMounted, isLoading])
 
   const getRecommendations = async () => {
+    // 跟踪获取推荐按钮点击事件
+    trackEvent('get_recommendations_click')
+
     setIsLoading(true)
     try {
       // 只有当缓存为空时才从API获取电影
@@ -100,17 +105,41 @@ export default function MovieRecommendation() {
         const newIds = randomMovies.map((movie: Movie) => movie.id);
         setRecommendedMovieIds((prev) => [...prev, ...newIds]);
       }
+
+      // 跟踪获取推荐成功事件
+      trackEvent('recommendations_loaded', {
+        movie_count: 3
+      })
     } catch (error) {
       console.error("Error fetching recommendations:", error)
+      // 跟踪错误事件
+      trackEvent('recommendations_error', {
+        error_message: error instanceof Error ? error.message : 'Unknown error'
+      })
     }
     setIsLoading(false)
   }
 
   const handleMovieClick = (id: number) => {
+    // 找到被点击的电影
+    const clickedMovie = movies.find(movie => movie.id === id);
+    
+    // 跟踪电影点击事件
+    if (clickedMovie) {
+      trackEvent('movie_details_click', {
+        movie_id: id,
+        movie_title: clickedMovie.title
+      })
+    }
+    
     setSelectedMovieId(id)
   }
 
   const handleCloseDetail = () => {
+    // 跟踪关闭详情事件
+    trackEvent('close_movie_details', {
+      movie_id: selectedMovieId
+    })
     setSelectedMovieId(null)
   }
 
