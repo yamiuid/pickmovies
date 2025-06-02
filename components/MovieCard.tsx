@@ -17,7 +17,7 @@ interface MovieProps {
 export default function MovieCard({ movie, onClick }: MovieProps) {
   return (
     <motion.div
-      className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-lg overflow-hidden shadow-lg cursor-pointer"
+      className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg cursor-pointer"
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={() => onClick(movie.id)}

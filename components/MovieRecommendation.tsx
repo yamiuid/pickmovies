@@ -17,12 +17,12 @@ interface Movie {
 
 // 骨架屏组件
 const MovieCardSkeleton = () => (
-  <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-lg overflow-hidden shadow-lg">
+  <div className="bg-white bg-opacity-10 backdrop-filter backdrop-blur-lg rounded-2xl overflow-hidden shadow-lg">
     <div className="relative aspect-[2/3] bg-gray-700 animate-pulse"></div>
     <div className="p-4">
-      <div className="h-6 bg-gray-700 rounded animate-pulse mb-2"></div>
-      <div className="h-4 bg-gray-700 rounded animate-pulse w-1/2 mb-2"></div>
-      <div className="h-4 bg-gray-700 rounded animate-pulse w-2/3"></div>
+      <div className="h-6 bg-gray-700 rounded-2xl animate-pulse mb-2"></div>
+      <div className="h-4 bg-gray-700 rounded-2xl animate-pulse w-1/2 mb-2"></div>
+      <div className="h-4 bg-gray-700 rounded-2xl animate-pulse w-2/3"></div>
     </div>
   </div>
 )
